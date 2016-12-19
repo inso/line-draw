@@ -18,8 +18,12 @@
             renderTime: null,
             renderXTime: null,
             busy: false,
-            drawers: {},
-            selectedDrawer: null,
+            drawers: {
+                'Null': function (x1, y1, x2, y2, drawPoint, ready) {
+                    ready();
+                }
+            },
+            selectedDrawer: 'Null',
             pointsDrawn: null,
             performBench: true
         },
@@ -30,9 +34,7 @@
                     location = "" + window.location
                 ;
 
-                if (this.selectedDrawer) {
-                    components.push(this.selectedDrawer);
-                }
+                components.push(this.selectedDrawer);
 
                 if (location.indexOf('#') !== -1) {
                     location = location.split('#')[0];
@@ -70,24 +72,18 @@
                 this.renderTime = null;
                 this.renderXTime = null;
 
-                if (this.selectedDrawer) {
-                    var self = this;
-                    this.doBench(function () {
-                        setTimeout(function () {
-                            self.initialDraw();
-                            var drawStartTime = performance.now();
-                            self.pointsDrawn = 0;
-                            self.draw(function () {
-                                self.renderTime = performance.now() - drawStartTime;
-                                self.busy = false;
-                            });
-                        }, 100);
-                    });
-                } else {
-                    this.initialDraw();
-                    this.pointsDrawn = null;
-                    this.busy = false;
-                }
+                var self = this;
+                this.doBench(function () {
+                    setTimeout(function () {
+                        self.initialDraw();
+                        var drawStartTime = performance.now();
+                        self.pointsDrawn = 0;
+                        self.draw(function () {
+                            self.renderTime = performance.now() - drawStartTime;
+                            self.busy = false;
+                        });
+                    }, 100);
+                });
             },
             initialDraw: function () {
                 this.clear();

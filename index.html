@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Line Plot</title>
+    <title>Line Draw</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
@@ -23,7 +23,6 @@
         <button class="btn" @click="generateRandomPoints" :disabled="busy">Generate points!</button>
         <button class="btn btn-danger" @click="update">Update!</button>
         <select class="form-control" style="width: 200px; display: inline-block" v-model="selectedDrawer" :disabled="busy">
-            <option value="">None</option>
             <option v-for="(drawer, drawerName) in drawers" :value="drawerName">
                 {{ drawerName }}
             </option>
@@ -46,7 +45,7 @@
 <script src="app.js"></script>
 <script>
     (function () {
-        appAddDrawer('Binary', function (x1, y1, x2, y2, drawPoint, ready) {
+        appAddDrawer('Binary(broken)', function (x1, y1, x2, y2, drawPoint, ready) {
             var points = [[x1, y1], [x2, y2]];
 
             while (true) {
@@ -150,9 +149,10 @@
                 draw(i);
             }
 
+            draw(a2);
             ready();
         });
-        appAddDrawer('Binary2', function (x1, y1, x2, y2, drawPoint, ready) {
+        appAddDrawer('Binary', function (x1, y1, x2, y2, drawPoint, ready) {
             var points = [[x1, y1], [x2, y2]], distance = 1.1;
 
             while (true) {
