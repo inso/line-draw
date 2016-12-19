@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Line Plot</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+</head>
+<body>
+<div id="app" class="container">
+    <div class="row">
+        <canvas :width="width" :height="height" style="border: 1px #ccc solid"></canvas>
+    </div>
+    <div class="row">
+        <label>x1: <input class="form-control" style="width: 100px;" type="number" min="0" :max="width" v-model.number="x1" :disabled="busy"></label>
+        <label>y1: <input class="form-control" style="width: 100px;" type="number" min="0" :max="height" v-model.number="y1" :disabled="busy"></label>
+        <label>x2: <input class="form-control" style="width: 100px;" type="number" min="0" :max="width" v-model.number="x2" :disabled="busy"></label>
+        <label>y2: <input class="form-control" style="width: 100px;" type="number" min="0" :max="height" v-model.number="y2" :disabled="busy"></label>
+        <label>Bench: <input class="form-control" type="checkbox" v-model="performBench"></label>
+    </div>
+    <div class="row">
+        <button class="btn" @click="generateRandomPoints" :disabled="busy">Generate points!</button>
+        <button class="btn btn-danger" @click="update">Update!</button>
+        <select class="form-control" style="width: 200px; display: inline-block" v-model="selectedDrawer" :disabled="busy">
+            <option value="">None</option>
+            <option v-for="(drawer, drawerName) in drawers" :value="drawerName">
+                {{ drawerName }}
+            </option>
+        </select>
+        <span>Url: <a :href="url">{{ url }}</a></span>
+    </div>
+    <div class="row">
+        <div v-if="busy">
+            <i class="fa fa-cog fa-spin" style="font-size:24px" v-if="busy"></i>
+        </div>
+        <div v-else>
+            <div>Render time (1x): <span style="font-weight: bold">{{ renderTime|float }} ms</span></div>
+            <div>Bench time ({{ benchTimes }}x): <span style="font-weight: bold">{{ renderXTime|float }} ms</span></div>
+            <div>Points drawn: <span style="font-weight: bold">{{ pointsDrawn|int }}</span></div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/vue/2.1.4/vue.min.js"></script>
+<script src="app.js"></script>
+<script>
+    (function () {
+        appAddDrawer('Binary', function (x1, y1, x2, y2, drawPoint, ready) {
+            var points = [[x1, y1], [x2, y2]];
+
+            while (true) {
+                var nextPoints = [], found = false, p1, p2, m;
+
+                for (var i = 0, l = points.length; i < (l - 1); i++) {
+                    p1 = points[i];
+                    p2 = points[i + 1];
+                    var dist = Math.sqrt(Math.pow(p1[0] - p2[0], 2) + Math.pow(p1[1] - p2[1], 2));
+
+                    if (dist > 1.43) {
+                        found = true;
+                        m = [
+                            Math.round((p1[0] + p2[0]) / 2),
+                            Math.round((p1[1] + p2[1]) / 2)
+                        ];
+                        nextPoints.push(p1);
+                        nextPoints.push(m);
+                        nextPoints.push(p2);
+                        drawPoint(m[0], m[1]);
+                    }
+                }
+
+                if (!found) {
+                    break;
+                }
+
+                points = nextPoints;
+            }
+
+            ready();
+        });
+        appAddDrawer('Fx', function (x1, y1, x2, y2, drawPoint, ready) {
+            var dX = Math.abs(x2 - x1),
+                dY = Math.abs(y2 - y1),
+                increaseX = x2 - x1 > 0 ? 1 : -1,
+                increaseY = y2 - y1 > 0 ? 1 : -1,
+                drawParams,
+                x, y, error
+            ;
+
+            if (dX > dY) {
+                drawParams = {
+                    'increaseX': increaseX,
+                    'increaseY': 0,
+                    'length': dX,
+                    'corrector': dY
+                };
+            } else {
+                drawParams = {
+                    'increaseX': 0,
+                    'increaseY': increaseY,
+                    'length': dY,
+                    'corrector': dX
+                };
+            }
+
+            x = x1;
+            y = y1;
+            error = drawParams.length / 2;
+
+            drawPoint(x, y);
+
+            for (var p = 0; p < drawParams.length; p++) {
+                error -= drawParams.corrector;
+
+                if (error < 0) {
+                    error += drawParams.length;
+                    x += increaseX;
+                    y += increaseY;
+                } else {
+                    x += drawParams.increaseX;
+                    y += drawParams.increaseY;
+                }
+
+                drawPoint(x, y);
+            }
+
+            ready();
+        });
+        appAddDrawer('MyFx', function (x1, y1, x2, y2, drawPoint, ready) {
+            var
+                xd = x1 - x2,
+                yd = y1 - y2,
+                k1 = yd / xd,
+                k2 = y1 - x1 * k1,
+                i, a1, a2, draw
+            ;
+
+            if (Math.abs(xd) >= Math.abs(yd)) {
+                a1 = x1 < x2 ? x1 : x2;
+                a2 = x1 < x2 ? x2 : x1;
+                draw = function (i) { return drawPoint(i, i * k1 + k2) };
+            } else {
+                a1 = y1 < y2 ? y1 : y2;
+                a2 = y1 < y2 ? y2 : y1;
+                draw = function (i) { return drawPoint((i - k2) / k1, i) };
+            }
+
+            for (i = a1; i !== a2; i++) {
+                draw(i);
+            }
+
+            ready();
+        });
+        appAddDrawer('Binary2', function (x1, y1, x2, y2, drawPoint, ready) {
+            var points = [[x1, y1], [x2, y2]], distance = 1.1;
+
+            while (true) {
+                var nextPoints = [], found = false, p1, p2, m;
+
+                for (var i = 0, l = points.length; i < (l - 1); i++) {
+                    p1 = points[i];
+                    p2 = points[i + 1];
+
+                    if (Math.abs(p1[0] - p2[0]) > distance || Math.abs(p1[1] - p2[1]) > distance) {
+                        found = true;
+                        m = [
+                            (p1[0] + p2[0]) / 2,
+                            (p1[1] + p2[1]) / 2
+                        ];
+                        nextPoints.push(p1);
+                        nextPoints.push(m);
+                        nextPoints.push(p2);
+                        drawPoint(m[0], m[1]);
+                    }
+                }
+
+                if (!found) {
+                    break;
+                }
+
+                points = nextPoints;
+            }
+
+            ready();
+        });
+    })();
+</script>
+</body>
+</html>
