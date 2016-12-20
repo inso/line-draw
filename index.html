@@ -184,6 +184,37 @@
 
             ready();
         });
+        appAddDrawer('SLCLine', function (x1, y1, x2, y2, drawPoint, ready) {
+            function getX(y) {
+                return ((y2 * x1 + y * x2 - y * x1 - y1 * x2) / (y2 - y1));
+            }
+            function getY(x) {
+                return ((x2 * y1 + x * y2 - x * y1 - x1 * y2) / (x2 - x1));
+            }
+            if (Math.abs(x1-x2) > Math.abs(y1-y2) ) {
+                if (x1 > x2) {
+                    for (x = x2; x < x1; x++ ) {
+                        drawPoint(x, getY(x));
+                    }
+                } else {
+                    for (x = x1; x < x2; x++ ) {
+                        drawPoint( x, getY(x));
+                    }
+                }
+            } else {
+                if (y1 > y2) {
+                    for (y = y2; y < y1; y++ ) {
+                        drawPoint(getX(y), y);
+                    }
+                } else {
+                    for (y = y1; y < y2; y++ ) {
+                        drawPoint(getX(y), y);
+                    }
+                }
+            }
+
+            ready();
+        });
     })();
 </script>
 </body>
